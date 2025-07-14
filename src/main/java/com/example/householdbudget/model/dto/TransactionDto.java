@@ -1,5 +1,9 @@
 package com.example.householdbudget.model.dto;
 
+import java.time.format.DateTimeFormatter;
+
+import com.example.householdbudget.model.entity.TransactionEntity;
+
 public record TransactionDto(
     /** 
      * ID
@@ -30,5 +34,15 @@ public record TransactionDto(
      */
     String description
 ) {
-    
+    public static TransactionDto ToDTO(TransactionEntity entity) {
+        return new TransactionDto(
+            entity.id(),
+            entity.transactionDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+            entity.transactionType(),
+            entity.amount(),
+            entity.category(),
+            entity.paymentMethod(),
+            entity.description()
+        );
+    }
 }

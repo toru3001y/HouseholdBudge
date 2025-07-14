@@ -31,7 +31,7 @@
             <tr th:each="transaction : ${transactions}" th:object="${transaction}">
                 <td th:text="*{transactionDate}">2025-01-15</td>
                 <td th:text="*{transactionType}">支出</td>
-                <td th:text="*{amount} + '円'">3,500円</td>
+                <td th:text="${#numbers.formatInteger({transaction.amount}, 0, 'COMMA')} + '円'">3,500円</td>
                 <td th:text="*{category}">食費</td>
                 <td th:text="*{paymentMethod}">クレジットカード</td>
                 <td th:text="*{description}">スーパーでの買い物</td>
