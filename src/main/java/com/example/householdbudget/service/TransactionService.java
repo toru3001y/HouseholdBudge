@@ -21,7 +21,6 @@ public class TransactionService {
      * @return
      */
     public List<TransactionEntity> search() {
-        var list = repository.select();
-        return list;
+        return repository.select();
     }
 }
