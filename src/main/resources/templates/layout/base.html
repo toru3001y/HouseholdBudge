@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- <title th:text="${pageTitle} + ' - シンプル家計簿'">シンプル家計簿</title> -->
+    <title layout:title-pattern="$CONTENT_TITLE - $LAYOUT_TITLE">
+      シンプル家計簿
+    </title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- カスタムCSS -->
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+<body>
+    <!-- ナビゲーションバー -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" th:href="@{/}">
+                <i class="fas fa-wallet me-2"></i>
+                シンプル家計簿
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/}" th:classappend="${#strings.equals(currentPage, 'home')} ? 'active' : ''">
+                            <i class="fas fa-home me-1"></i>ホーム
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/transaction/register}" th:classappend="${#strings.equals(currentPage, 'register')} ? 'active' : ''">
+                            <i class="fas fa-plus me-1"></i>収支登録
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/transaction/list}" th:classappend="${#strings.equals(currentPage, 'list')} ? 'active' : ''">
+                            <i class="fas fa-list me-1"></i>収支一覧
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/summary/monthly}" th:classappend="${#strings.equals(currentPage, 'monthly')} ? 'active' : ''">
+                            <i class="fas fa-chart-bar me-1"></i>月別集計
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/household/payment-analysis}" th:classappend="${#strings.equals(currentPage, 'analysis')} ? 'active' : ''">
+                            <i class="fas fa-credit-card me-1"></i>支払い分析
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- メインコンテンツ -->
+    <main class="container mt-4">
+        <!-- ページタイトル -->
+        <div class="row mb-4" th:if="${pageTitle}">
+            <div class="col-12">
+                <h1 class="h2 border-start border-primary border-4 ps-3" th:text="${pageTitle}">ページタイトル</h1>
+            </div>
+        </div>
+
+        <!-- アラート表示エリア -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            <span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <!-- コンテンツ挿入部分 -->
+        <th:block layout:fragment="content">
+            <!-- 各ページの内容がここに挿入される -->
+        </th:block>
+    </main>
+
+    <!-- フッター -->
+    <footer class="bg-light mt-5 py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-0 text-muted">
+                        <i class="fas fa-wallet me-2"></i>
+                        シンプル家計簿 &copy; 2025
+                    </p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <small class="text-muted">
+                        収支管理をシンプルに
+                    </small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- カスタムJS -->
+    <script th:src="@{/js/app.js}"></script>
+</body>
+</html>

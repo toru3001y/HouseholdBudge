@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layout/base}">
+<head>
+    <!-- base.htmlで定義されるため、ここでは個別設定のみ -->
+    <title>収支一覧</title>
+</head>
+<body>
+    <th:block layout:fragment="content">
+        <!-- アクションボタン -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <a th:href="@{/}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            トップページに戻る
+                        </a>
+                    </div>
+                    <div>
+                        <a th:href="@{/transaction/register}" class="btn btn-success">
+                            <i class="fas fa-plus me-2"></i>
+                            新規登録
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 取引履歴テーブル -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-history me-2"></i>
+                            取引履歴
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th scope="col">
+                                            <i class="fas fa-calendar me-1"></i>
+                                            日付
+                                        </th>
+                                        <th scope="col">
+                                            <i class="fas fa-exchange-alt me-1"></i>
+                                            取引種別
+                                        </th>
+                                        <th scope="col" class="text-end">
+                                            <i class="fas fa-yen-sign me-1"></i>
+                                            金額
+                                        </th>
+                                        <th scope="col">
+                                            <i class="fas fa-tags me-1"></i>
+                                            カテゴリ
+                                        </th>
+                                        <th scope="col">
+                                            <i class="fas fa-credit-card me-1"></i>
+                                            支払い方法
+                                        </th>
+                                        <th scope="col">
+                                            <i class="fas fa-comment me-1"></i>
+                                            説明
+                                        </th>
+                                        <th scope="col" class="text-center">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="transaction : ${transactions}" th:object="${transaction}">
+                                        <td th:text="*{transactionDate}">2025-01-15</td>
+                                        <td>
+                                            <span th:if="*{transactionType} == '収入'" class="badge bg-success">
+                                                <i class="fas fa-arrow-up me-1"></i>
+                                                収入
+                                            </span>
+                                            <span th:if="*{transactionType} == '支出'" class="badge bg-danger">
+                                                <i class="fas fa-arrow-down me-1"></i>
+                                                支出
+                                            </span>
+                                        </td>
+                                        <td class="text-end">
+                                            <span th:if="*{transactionType} == '収入'" class="text-success fw-bold">
+                                                +<span th:text="${#numbers.formatInteger(transaction.amount, 0, 'COMMA')} + '円'">250,000円</span>
+                                            </span>
+                                            <span th:if="*{transactionType} == '支出'" class="text-danger fw-bold">
+                                                -<span th:text="${#numbers.formatInteger(transaction.amount, 0, 'COMMA')} + '円'">3,500円</span>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light text-dark" th:text="*{category}">食費</span>
+                                        </td>
+                                        <td th:text="*{paymentMethod}">クレジットカード</td>
+                                        <td th:text="*{description}">スーパーでの買い物</td>
+                                        <td class="text-center">
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a th:href="@{/transaction/edit/{id}(id=*{id})}" class="btn btn-outline-primary" title="編集">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <!-- 削除フォーム -->
+                                                <form th:action="@{/transaction/delete/{id}(id=${transaction.id})}" 
+                                                    th:method="delete" 
+                                                    style="display: inline;" 
+                                                    onsubmit="return confirm('この取引を削除しますか？')">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="削除">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    
+                                    <!-- データが無い場合 -->
+                                    <tr th:if="${#lists.isEmpty(transactions)}">
+                                        <td colspan="7" class="text-center py-5 text-muted">
+                                            <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                            <p class="mb-0">取引データがありません</p>
+                                            <small>右上の「新規登録」ボタンから取引を追加してください</small>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 集計情報 -->
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6 class="card-title text-muted">総取引数</h6>
+                        <h4 class="text-primary" th:text="${#lists.size(transactions)} + '件'">1件</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6 class="card-title text-muted">収入件数</h6>
+                        <h4 class="text-success" th:text="${#aggregates.sum(transactions.![transactionType == '収入' ? 1 : 0])} + '件'">2件</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6 class="card-title text-muted">支出件数</h6>
+                        <h4 class="text-danger" th:text="${#aggregates.sum(transactions.![transactionType == '支出' ? 1 : 0])} + '件'">3件</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </th:block>
+</body>
+</html>

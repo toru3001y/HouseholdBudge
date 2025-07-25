@@ -6,7 +6,7 @@ CREATE TABLE household_transactions (
     id BIGSERIAL PRIMARY KEY,
     transaction_date DATE NOT NULL,
     transaction_type VARCHAR(10) NOT NULL CHECK (transaction_type IN ('収入', '支出')),
-    amount DECIMAL(10,2) NOT NULL CHECK (amount > 0),
+    amount INTEGER NOT NULL CHECK (amount > 0),
     category VARCHAR(50) NOT NULL,
     payment_method VARCHAR(20) NOT NULL CHECK (payment_method IN ('現金', 'クレジットカード', '電子マネー')),
     description VARCHAR(200),
