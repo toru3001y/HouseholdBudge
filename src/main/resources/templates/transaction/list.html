@@ -142,7 +142,7 @@
                 <div class="card text-center">
                     <div class="card-body">
                         <h6 class="card-title text-muted">収入件数</h6>
-                        <h4 class="text-success" th:text="${#aggregates.sum(transactions.![transactionType == '収入' ? 1 : 0])} + '件'">2件</h4>
+                        <h4 class="text-success" th:text="${(#aggregates.sum(transactions.![transactionType == '収入' ? 1 : 0]) ?: 0)} + '件'">2件</h4>
                     </div>
                 </div>
             </div>
@@ -150,7 +150,7 @@
                 <div class="card text-center">
                     <div class="card-body">
                         <h6 class="card-title text-muted">支出件数</h6>
-                        <h4 class="text-danger" th:text="${#aggregates.sum(transactions.![transactionType == '支出' ? 1 : 0])} + '件'">3件</h4>
+                        <h4 class="text-danger" th:text="${(#aggregates.sum(transactions.![transactionType == '支出' ? 1 : 0]) ?: 0)} + '件'">3件</h4>
                     </div>
                 </div>
             </div>

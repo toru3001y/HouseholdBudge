@@ -22,7 +22,7 @@ import lombok.RequiredArgsConstructor;
 @Controller
 @RequestMapping("/transaction")
 @RequiredArgsConstructor
-public class HouseholdController {
+public class TransactionController {
 
     private final TransactionService service;
 

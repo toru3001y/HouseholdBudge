@@ -62,8 +62,15 @@
                     <div class="card-body text-center">
                         <i class="fas fa-arrow-up fa-2x mb-2"></i>
                         <h5 class="card-title">今月の収入</h5>
-                        <h3 class="mb-0">¥350,000</h3>
-                        <small class="opacity-75">前月比 +5.2%</small>
+                        <h3 class="mb-0">
+                            <span th:if="${latestMonth != null}" th:text="'&yen' + ${#numbers.formatDecimal(latestMonth.totalIncome(), 1, 'COMMA', 0, 'POINT')}"></span>
+                            <span th:if="${latestMonth == null}">¥0</span>
+                        </h3>
+                        <small class="opacity-75">
+                            前月比 
+                            <span th:if="${latestMonth != null}" th:text="${latestMonth.incomeComparisonRate() >= 0 ? '+' : ''} + ${#numbers.formatDecimal(latestMonth.incomeComparisonRate(), 1, 2)} + '%'"></span>
+                            <span th:if="${latestMonth == null}">-</span>
+                        </small>
                     </div>
                 </div>
             </div>
@@ -73,19 +80,38 @@
                     <div class="card-body text-center">
                         <i class="fas fa-arrow-down fa-2x mb-2"></i>
                         <h5 class="card-title">今月の支出</h5>
-                        <h3 class="mb-0">¥280,000</h3>
-                        <small class="opacity-75">前月比 -2.1%</small>
+                        <h3 class="mb-0">
+                            <span th:if="${latestMonth != null}" th:text="'&yen' + ${#numbers.formatDecimal(latestMonth.totalExpense(), 1, 'COMMA', 0, 'POINT')}"></span>
+                            <span th:if="${latestMonth == null}">¥0</span>
+                        </h3>
+                        <small class="opacity-75">
+                            前月比 
+                            <span th:if="${latestMonth != null}" th:text="${latestMonth.expenseComparisonRate() >= 0 ? '+' : ''} + ${#numbers.formatDecimal(latestMonth.expenseComparisonRate(), 1, 2)} + '%'"></span>
+                            <span th:if="${latestMonth == null}">-</span>
+                        </small>
                     </div>
                 </div>
             </div>
             
             <div class="col-md-3">
-                <div class="card bg-info text-white">
+                <div th:class="'card text-white ' + (${latestMonth != null and latestMonth.balanceStatus() == '黒字'} ? 'bg-success' : 'bg-danger')">
                     <div class="card-body text-center">
-                        <i class="fas fa-balance-scale fa-2x mb-2"></i>
+                        <i th:class="${latestMonth != null and latestMonth.balanceStatus() == '黒字'} ? 'fas fa-arrow-up fa-2x mb-2' : 'fas fa-arrow-down fa-2x mb-2'"></i>
                         <h5 class="card-title">今月の収支</h5>
-                        <h3 class="mb-0">+¥70,000</h3>
-                        <small class="opacity-75">黒字継続中</small>
+                        <h3 class="mb-0">
+                            <span th:if="${latestMonth != null}">
+                                <!-- 符号表示 -->
+                                <span th:if="${latestMonth.balance() != null and latestMonth.balance().compareTo(T(java.math.BigDecimal).ZERO) >= 0}">+</span>
+                                <span th:if="${latestMonth.balance() != null and latestMonth.balance().compareTo(T(java.math.BigDecimal).ZERO) < 0}">-</span>
+                                <!-- 絶対値表示（BigDecimal.abs()を使用） -->
+                                ¥<span th:text="${#numbers.formatDecimal((latestMonth.balance() ?: T(java.math.BigDecimal).ZERO).abs(), 1, 'COMMA', 0, 'POINT')}">0</span>
+                            </span>
+                            <span th:if="${latestMonth == null}">¥0</span>
+                        </h3>
+                        <small class="opacity-75">
+                            <span th:if="${latestMonth != null}" th:text="${latestMonth.balanceStatus()} + '継続中'"></span>
+                            <span th:if="${latestMonth == null}">データなし</span>
+                        </small>
                     </div>
                 </div>
             </div>
@@ -95,8 +121,16 @@
                     <div class="card-body text-center">
                         <i class="fas fa-percentage fa-2x mb-2"></i>
                         <h5 class="card-title">貯蓄率</h5>
-                        <h3 class="mb-0">20.0%</h3>
-                        <small class="opacity-75">目標: 25%</small>
+                        <h3 class="mb-0">
+                            <span th:if="${latestMonth != null and latestMonth.totalIncome() != null and latestMonth.totalIncome() > 0}" 
+                                th:text="${#numbers.formatDecimal((latestMonth.balance() ?: 0) * 100 / latestMonth.totalIncome(), 1, 1)} + '%'"></span>
+                            <span th:if="${latestMonth == null or latestMonth.totalIncome() == null or latestMonth.totalIncome() <= 0}">0.0%</span>
+                        </h3>
+                        <small class="opacity-75">
+                            <span th:if="${latestMonth != null and latestMonth.balanceStatus() != null}" 
+                                th:text="${latestMonth.balanceStatus()} + '継続中'"></span>
+                            <span th:if="${latestMonth == null or latestMonth.balanceStatus() == null}">データなし</span>
+                        </small>
                     </div>
                 </div>
             </div>
@@ -154,69 +188,24 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td class="fw-bold">2025年1月</td>
-                                        <td class="text-end text-success">¥350,000</td>
-                                        <td class="text-end text-danger">¥280,000</td>
-                                        <td class="text-end fw-bold text-success">+¥70,000</td>
+                                    <tr th:each="summary : ${monthlySummary}" th:object="${summary}">
+                                        <td class="fw-bold" th:text="*{year} + '年' + *{month} + '月'">2025年1月</td>
+                                        <td class="text-end text-success" th:text="'&yen' + ${#numbers.formatDecimal(summary.totalIncome, 1, 'COMMA', 0, 'POINT')}">¥350,000</td>
+                                        <td class="text-end text-danger" th:text="'&yen' + ${#numbers.formatDecimal(summary.totalExpense, 1, 'COMMA', 0, 'POINT')}">¥280,000</td>
+                                        <td class="text-end fw-bold text-success" th:text="'&yen' + ${#numbers.formatDecimal(summary.balance, 1, 'COMMA', 0, 'POINT')}">+¥70,000</td>
                                         <td class="text-center">
-                                            <span class="badge bg-success">+5.2%</span>
-                                        </td>
-                                        <td class="text-center">
-                                            <button class="btn btn-sm btn-outline-primary">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td class="fw-bold">2024年12月</td>
-                                        <td class="text-end text-success">¥320,000</td>
-                                        <td class="text-end text-danger">¥290,000</td>
-                                        <td class="text-end fw-bold text-success">+¥30,000</td>
-                                        <td class="text-center">
-                                            <span class="badge bg-danger">-2.1%</span>
-                                        </td>
-                                        <td class="text-center">
-                                            <button class="btn btn-sm btn-outline-primary">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td class="fw-bold">2024年11月</td>
-                                        <td class="text-end text-success">¥310,000</td>
-                                        <td class="text-end text-danger">¥305,000</td>
-                                        <td class="text-end fw-bold text-success">+¥5,000</td>
-                                        <td class="text-center">
-                                            <span class="badge bg-warning">-15.2%</span>
-                                        </td>
-                                        <td class="text-center">
-                                            <button class="btn btn-sm btn-outline-primary">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td class="fw-bold">2024年10月</td>
-                                        <td class="text-end text-success">¥325,000</td>
-                                        <td class="text-end text-danger">¥320,000</td>
-                                        <td class="text-end fw-bold text-success">+¥5,000</td>
-                                        <td class="text-center">
-                                            <span class="badge bg-success">+8.7%</span>
-                                        </td>
-                                        <td class="text-center">
-                                            <button class="btn btn-sm btn-outline-primary">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td class="fw-bold">2024年9月</td>
-                                        <td class="text-end text-success">¥298,000</td>
-                                        <td class="text-end text-danger">¥315,000</td>
-                                        <td class="text-end fw-bold text-danger">-¥17,000</td>
-                                        <td class="text-center">
-                                            <span class="badge bg-danger">-12.5%</span>
+                                            <!-- 前月比の条件分岐表示 -->
+                                            <span th:if="${summary.previousMonthComparisonRate == 999.99}" class="badge bg-secondary">初月</span>
+                                            <span th:if="${summary.previousMonthComparisonRate == 888.88}" class="badge bg-warning text-dark">前月0円</span>
+                                            <span th:if="${summary.previousMonthComparisonRate != 999.99 and summary.previousMonthComparisonRate != 888.88 and summary.previousMonthComparisonRate > 0}" 
+                                                  class="badge bg-success" 
+                                                  th:text="'+' + ${#numbers.formatDecimal(summary.previousMonthComparisonRate, 1, 2)} + '%'">+5.2%</span>
+                                            <span th:if="${summary.previousMonthComparisonRate != 999.99 and summary.previousMonthComparisonRate != 888.88 and summary.previousMonthComparisonRate < 0}" 
+                                                  class="badge bg-danger" 
+                                                  th:text="${#numbers.formatDecimal(summary.previousMonthComparisonRate, 1, 2)} + '%'">-2.1%</span>
+                                            <span th:if="${summary.previousMonthComparisonRate != 999.99 and summary.previousMonthComparisonRate != 888.88 and summary.previousMonthComparisonRate == 0}" 
+                                                  class="badge bg-info" 
+                                                  th:text="'±0%'">±0%</span>
                                         </td>
                                         <td class="text-center">
                                             <button class="btn btn-sm btn-outline-primary">
@@ -242,42 +231,22 @@
                         </h5>
                     </div>
                     <div class="card-body">
+                        <!-- 収入カテゴリ別 (今月) -->
                         <div class="row">
-                            <div class="col-6">
+                            <!-- データがある場合 -->
+                            <div th:if="${!#lists.isEmpty(incomeCategories)}" th:each="income : ${incomeCategories}" class="col-6">
                                 <div class="d-flex justify-content-between mb-2">
-                                    <span>給与</span>
-                                    <span class="fw-bold">¥280,000</span>
+                                    <span th:text="${income.category}">給与</span>
+                                    <span class="fw-bold" th:text="'¥' + ${#numbers.formatDecimal(income.amount, 1, 'COMMA', 0, 'POINT')}">¥280,000</span>
                                 </div>
                                 <div class="progress mb-3" style="height: 8px;">
-                                    <div class="progress-bar bg-success" style="width: 80%"></div>
+                                    <div class="progress-bar bg-success" th:style="'width: ' + ${income.percentage} + '%;'"></div>
                                 </div>
                             </div>
-                            <div class="col-6">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>副業</span>
-                                    <span class="fw-bold">¥50,000</span>
-                                </div>
-                                <div class="progress mb-3" style="height: 8px;">
-                                    <div class="progress-bar bg-success" style="width: 14%"></div>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>投資</span>
-                                    <span class="fw-bold">¥15,000</span>
-                                </div>
-                                <div class="progress mb-3" style="height: 8px;">
-                                    <div class="progress-bar bg-success" style="width: 4%"></div>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>その他</span>
-                                    <span class="fw-bold">¥5,000</span>
-                                </div>
-                                <div class="progress mb-3" style="height: 8px;">
-                                    <div class="progress-bar bg-success" style="width: 2%"></div>
-                                </div>
+                            
+                            <!-- データがない場合 -->
+                            <div th:if="${#lists.isEmpty(incomeCategories)}" class="col-12 text-center py-3">
+                                <p class="text-muted mb-0">今月の収入データがありません</p>
                             </div>
                         </div>
                     </div>
@@ -292,60 +261,22 @@
                         </h5>
                     </div>
                     <div class="card-body">
+                        <!-- 支出カテゴリ別 (今月) -->
                         <div class="row">
-                            <div class="col-6">
+                            <!-- データがある場合 -->
+                            <div th:if="${!#lists.isEmpty(expenseCategories)}" th:each="expense : ${expenseCategories}" class="col-6">
                                 <div class="d-flex justify-content-between mb-2">
-                                    <span>食費</span>
-                                    <span class="fw-bold">¥80,000</span>
+                                    <span th:text="${expense.category}">給与</span>
+                                    <span class="fw-bold" th:text="'¥' + ${#numbers.formatDecimal(expense.amount, 1, 'COMMA', 0, 'POINT')}">¥280,000</span>
                                 </div>
                                 <div class="progress mb-3" style="height: 8px;">
-                                    <div class="progress-bar bg-danger" style="width: 29%"></div>
+                                    <div class="progress-bar bg-success" th:style="'width: ' + ${expense.percentage} + '%;'"></div>
                                 </div>
                             </div>
-                            <div class="col-6">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>光熱費</span>
-                                    <span class="fw-bold">¥45,000</span>
-                                </div>
-                                <div class="progress mb-3" style="height: 8px;">
-                                    <div class="progress-bar bg-danger" style="width: 16%"></div>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>交通費</span>
-                                    <span class="fw-bold">¥35,000</span>
-                                </div>
-                                <div class="progress mb-3" style="height: 8px;">
-                                    <div class="progress-bar bg-danger" style="width: 13%"></div>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>娯楽費</span>
-                                    <span class="fw-bold">¥60,000</span>
-                                </div>
-                                <div class="progress mb-3" style="height: 8px;">
-                                    <div class="progress-bar bg-danger" style="width: 21%"></div>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>医療費</span>
-                                    <span class="fw-bold">¥25,000</span>
-                                </div>
-                                <div class="progress mb-3" style="height: 8px;">
-                                    <div class="progress-bar bg-danger" style="width: 9%"></div>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>その他</span>
-                                    <span class="fw-bold">¥35,000</span>
-                                </div>
-                                <div class="progress mb-3" style="height: 8px;">
-                                    <div class="progress-bar bg-danger" style="width: 13%"></div>
-                                </div>
+                            
+                            <!-- データがない場合 -->
+                            <div th:if="${#lists.isEmpty(expenseCategories)}" class="col-12 text-center py-3">
+                                <p class="text-muted mb-0">今月の支出データがありません</p>
                             </div>
                         </div>
                     </div>
