@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import com.example.householdbudget.model.dto.summary.ExpenseCategoryDTO;
 import com.example.householdbudget.model.dto.summary.IncomeCategoryDTO;
 import com.example.householdbudget.model.dto.summary.MonthlySummaryDTO;
+import com.example.householdbudget.model.dto.summary.YearlySummaryDTO;
 import com.example.householdbudget.service.summary.SummaryService;
 
 import lombok.RequiredArgsConstructor;
@@ -40,11 +41,15 @@ public class SummaryController {
                 .toList();
         }
 
+        var yearlySummary = summaryService.getPreviousYearSummary()
+                .map(YearlySummaryDTO::toYearlySummaryDTO).orElse(null);
+
         model.addAttribute("monthlySummary", monthlySummary);
         model.addAttribute("latestMonth", latestMonth);
         model.addAttribute("hasData", !monthlySummary.isEmpty());
         model.addAttribute("incomeCategories", incomeCategories);
         model.addAttribute("expenseCategories", expenseCategories);
+        model.addAttribute("yearlySummary", yearlySummary);
 
         return "summary/monthly";
     }

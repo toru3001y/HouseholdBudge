@@ -112,4 +112,28 @@
         ORDER BY amount DESC
     </select>
 
+    <select id="selectPreviousYearSummary" resultType="com.example.householdbudget.model.entity.summary.YearlySummaryEntity">
+        SELECT 
+            EXTRACT(YEAR FROM transaction_date) AS year,
+            COALESCE(SUM(CASE WHEN transaction_type = '収入' THEN amount ELSE 0 END), 0) AS totalIncome,
+            COALESCE(SUM(CASE WHEN transaction_type = '支出' THEN amount ELSE 0 END), 0) AS totalExpense,
+            COALESCE(SUM(CASE WHEN transaction_type = '収入' THEN amount ELSE 0 END), 0) - 
+            COALESCE(SUM(CASE WHEN transaction_type = '支出' THEN amount ELSE 0 END), 0) AS balance,
+            CASE 
+                WHEN SUM(CASE WHEN transaction_type = '収入' THEN amount ELSE 0 END) > 0 
+                THEN ROUND(
+                    (COALESCE(SUM(CASE WHEN transaction_type = '収入' THEN amount ELSE 0 END), 0) - 
+                    COALESCE(SUM(CASE WHEN transaction_type = '支出' THEN amount ELSE 0 END), 0)) * 100.0 / 
+                    SUM(CASE WHEN transaction_type = '収入' THEN amount ELSE 0 END), 2
+                )
+                ELSE 0.00 
+            END AS averageSavingsRate
+        FROM household_transactions 
+        WHERE EXTRACT(YEAR FROM transaction_date) = (
+            SELECT MAX(EXTRACT(YEAR FROM transaction_date)) 
+            FROM household_transactions
+        )
+        GROUP BY EXTRACT(YEAR FROM transaction_date)
+        LIMIT 1
+    </select>
 </mapper>

@@ -1,12 +1,14 @@
 package com.example.householdbudget.service.summary;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
 import com.example.householdbudget.model.entity.summary.ExpenseCategoryEntity;
 import com.example.householdbudget.model.entity.summary.IncomeCategoryEntity;
 import com.example.householdbudget.model.entity.summary.MonthlySummaryEntity;
+import com.example.householdbudget.model.entity.summary.YearlySummaryEntity;
 import com.example.householdbudget.repository.summary.SummaryRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -27,5 +29,9 @@ public class SummaryService {
 
     public List<ExpenseCategoryEntity> getLatestMonthExpenseCategories(int year, int month) {
         return summaryRepository.selectLatestMonthExpenseCategories(year, month);
+    }
+
+    public Optional<YearlySummaryEntity> getPreviousYearSummary() {
+        return summaryRepository.selectPreviousYearSummary();
     }
 }
