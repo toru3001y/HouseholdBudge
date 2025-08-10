@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layout/base}">
+<head>
+    <!-- base.htmlで定義されるため、ここでは個別設定のみ -->
+    <title th:text="${mode == 'REGISTER'} ? '収支登録' : '収支編集'"></title>
+</head>
+<body>
+    <th:block layout:fragment="content">
+        <!-- ナビゲーションリンク -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a th:href="@{/}" class="text-decoration-none">
+                                <i class="fas fa-home me-1"></i>ホーム
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">
+                            <i class="fas fa-plus me-1"></i>
+                            <span th:text="${mode == 'REGISTER'} ? '収支登録' : '収支編集'">収支登録</span>
+                        </li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <!-- 登録フォームカード -->
+                <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="card-title mb-0">
+                            <i th:class="${mode == 'REGISTER'} ? 'fas fa-plus-circle me-2' : 'fas fa-edit me-2'"></i>
+                            <span th:text="${mode == 'REGISTER'} ? '新規取引の登録' : '取引の編集'">新規取引の登録</span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form th:action="${mode == 'REGISTER'} ? @{/transaction/register} : @{/transaction/edit/{id}(id=${id})}"
+                              th:method="${mode == 'REGISTER'} ? 'post' : 'put'"
+                              th:object="${transactionForm}">
+
+                            <div class="row">
+                                <!-- 取引日付 -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="transactionDate" class="form-label fw-bold">
+                                        <i class="fas fa-calendar me-1"></i>取引日付
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="date" class="form-control" id="transactionDate" th:field="*{transactionDate}" required>
+                                    <div class="form-text">取引が発生した日付を選択してください</div>
+                                    <!-- バリデーションエラー表示 -->
+                                    <div th:if="${#fields.hasErrors('transactionDate')}" class="text-danger small">
+                                        <span th:errors="*{transactionDate}"></span>
+                                    </div>
+                                </div>
+
+                                <!-- 取引種別 -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="transactionType" class="form-label fw-bold">
+                                        <i class="fas fa-exchange-alt me-1"></i>取引種別
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select" id="transactionType" th:field="*{transactionType}" required>
+                                        <option value="">選択してください</option>
+                                        <option th:each="type : ${T(com.example.householdbudget.model.dto.transaction.TransactionType).values()}"
+                                                th:value="${type.name()}"
+                                                th:text="${type.getName()}">
+                                        </option>
+                                    </select>
+                                    <div class="form-text">収入または支出を選択してください</div>
+                                    <!-- バリデーションエラー表示 -->
+                                    <div th:if="${#fields.hasErrors('transactionType')}" class="text-danger small">
+                                        <span th:errors="*{transactionType}"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <!-- 金額 -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="amount" class="form-label fw-bold">
+                                        <i class="fas fa-yen-sign me-1"></i>金額
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">&yen;</span>
+                                        <input type="number" class="form-control" id="amount" th:field="*{amount}" min="1" step="1" required placeholder="1000">
+                                        <span class="input-group-text">円</span>
+                                    </div>
+                                    <div class="form-text">1円以上の金額を入力してください</div>
+                                    <!-- バリデーションエラー表示 -->
+                                    <div th:if="${#fields.hasErrors('amount')}" class="text-danger small">
+                                        <span th:errors="*{amount}"></span>
+                                    </div>
+                                </div>
+
+                                <!-- カテゴリ -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="category" class="form-label fw-bold">
+                                        <i class="fas fa-tags me-1"></i>カテゴリ
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select" id="category" th:field="*{category}" required>
+                                        <option value="">選択してください</option>
+                                        <!-- 収入カテゴリ -->
+                                        <optgroup label="収入">
+                                            <option th:each="category : ${incomeCategories}"
+                                                    th:value="${category.name()}"
+                                                    th:text="${category.getName()}">
+                                            </option>
+                                        </optgroup>
+                                        <!-- 支出カテゴリ -->
+                                        <optgroup label="支出">
+                                            <option th:each="category : ${expenseCategories}"
+                                                    th:value="${category.name()}"
+                                                    th:text="${category.getName()}">
+                                            </option>
+                                        </optgroup>
+                                    </select>
+                                    <div class="form-text">取引の分類を選択してください</div>
+                                    <!-- バリデーションエラー表示 -->
+                                    <div th:if="${#fields.hasErrors('category')}" class="text-danger small">
+                                        <span th:errors="*{category}"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <!-- 支払い方法 -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="paymentMethod" class="form-label fw-bold">
+                                        <i class="fas fa-credit-card me-1"></i>支払い方法
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select" id="paymentMethod" th:field="*{paymentMethod}" required>
+                                        <option value="">選択してください</option>
+                                        <option th:each="method : ${T(com.example.householdbudget.model.dto.transaction.PaymentMethodType).values()}"
+                                                th:value="${method.name()}"
+                                                th:text="${method.getName()}">
+                                        </option>
+                                    </select>
+                                    <div class="form-text">支払い方法を選択してください</div>
+                                    <!-- バリデーションエラー表示 -->
+                                    <div th:if="${#fields.hasErrors('paymentMethod')}" class="text-danger small">
+                                        <span th:errors="*{paymentMethod}"></span>
+                                    </div>
+                                </div>
+
+                                <!-- 説明（任意） -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="description" class="form-label fw-bold">
+                                        <i class="fas fa-comment me-1"></i>説明
+                                        <span class="text-muted">(任意)</span>
+                                    </label>
+                                    <input type="text" class="form-control" id="description" th:field="*{description}" maxlength="200" placeholder="スーパーでの買い物">
+                                    <div class="form-text">取引の詳細説明（最大200文字）</div>
+                                    <!-- バリデーションエラー表示 -->
+                                    <div th:if="${#fields.hasErrors('description')}" class="text-danger small">
+                                        <span th:errors="*{description}"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- プレビューエリア -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="card bg-light">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-eye me-1"></i>
+                                                入力内容プレビュー
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <small class="text-muted">日付:</small>
+                                                    <div id="previewDate" class="fw-bold">-</div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <small class="text-muted">種別:</small>
+                                                    <div id="previewType" class="fw-bold">-</div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <small class="text-muted">金額:</small>
+                                                    <div id="previewAmount" class="fw-bold text-primary">-</div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <small class="text-muted">カテゴリ:</small>
+                                                    <div id="previewCategory" class="fw-bold">-</div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <small class="text-muted">支払い方法:</small>
+                                                    <div id="previewPayment" class="fw-bold">-</div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <small class="text-muted">説明:</small>
+                                                    <div id="previewDescription" class="fw-bold">-</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ボタンエリア -->
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between">
+                                        <a th:href="${mode == 'REGISTER'} ? @{/} : @{/transaction/list}" class="btn btn-outline-secondary">
+                                            <i class="fas fa-arrow-left me-2"></i>
+                                            戻る
+                                        </a>
+                                        <div>
+                                            <button type="reset" class="btn btn-outline-warning me-2">
+                                                <i class="fas fa-undo me-2"></i>
+                                                リセット
+                                            </button>
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="fas fa-save me-2"></i>
+                                                <span th:text="${mode == 'REGISTER'} ? '登録する' : '更新する'">登録する</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 注意事項 -->
+                <div class="mt-4">
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-info-circle me-2"></i>
+                            入力時の注意事項
+                        </h6>
+                        <ul class="mb-0">
+                            <li><span class="text-danger">*</span>マークの項目は必須入力です</li>
+                            <li>金額は1円以上の整数で入力してください</li>
+                            <li>説明は最大200文字まで入力可能です</li>
+                            <li>登録後は一覧ページで確認できます</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- プレビュー機能用JavaScript -->
+        <script>
+            // フォーム入力のリアルタイムプレビュー
+            document.addEventListener('DOMContentLoaded', function() {
+                const form = document.querySelector('form');
+                const inputs = form.querySelectorAll('input, select');
+                const resetButton = document.querySelector('button[type="reset"]');
+                
+                inputs.forEach(input => {
+                    input.addEventListener('input', updatePreview);
+                    input.addEventListener('change', updatePreview);
+                });
+                
+                // リセットボタンのイベントリスナー追加
+                resetButton.addEventListener('click', function() {
+                    // setTimeout で DOM更新後にプレビューをクリア
+                    setTimeout(clearPreview, 0);
+                });
+                
+                function updatePreview() {
+                    // 日付
+                    const date = document.getElementById('transactionDate').value;
+                    if (date) {
+                        const formattedDate = date.replace(/-/g, '/');  // yyyy-MM-dd → yyyy/MM/dd
+                        document.getElementById('previewDate').textContent = formattedDate;
+                    } else {
+                        document.getElementById('previewDate').textContent = '-';
+                    }
+                    
+                    // 種別（selected optionのテキストを取得）
+                    const typeSelect = document.getElementById('transactionType');
+                    const typeText = typeSelect.options[typeSelect.selectedIndex]?.text || '-';
+                    document.getElementById('previewType').textContent = typeText;
+                    
+                    // 金額
+                    const amount = document.getElementById('amount').value;
+                    if (amount) {
+                        const formattedAmount = Number(amount).toLocaleString();
+                        document.getElementById('previewAmount').textContent = '¥' + formattedAmount + '円';
+                    } else {
+                        document.getElementById('previewAmount').textContent = '-';
+                    }
+                    
+                    // カテゴリ（selected optionのテキストを取得）
+                    const categorySelect = document.getElementById('category');
+                    const categoryText = categorySelect.options[categorySelect.selectedIndex]?.text || '-';
+                    document.getElementById('previewCategory').textContent = categoryText;
+                    
+                    // 支払い方法（selected optionのテキストを取得）
+                    const paymentSelect = document.getElementById('paymentMethod');
+                    const paymentText = paymentSelect.options[paymentSelect.selectedIndex]?.text || '-';
+                    document.getElementById('previewPayment').textContent = paymentText;
+                    
+                    // 説明
+                    const description = document.getElementById('description').value;
+                    document.getElementById('previewDescription').textContent = description || '-';
+                }
+                
+                // プレビュークリア関数
+                function clearPreview() {
+                    document.getElementById('previewDate').textContent = '-';
+                    document.getElementById('previewType').textContent = '-';
+                    document.getElementById('previewAmount').textContent = '-';
+                    document.getElementById('previewCategory').textContent = '-';
+                    document.getElementById('previewPayment').textContent = '-';
+                    document.getElementById('previewDescription').textContent = '-';
+                }
+            });
+        </script>
+    </th:block>
+</body>
+</html>

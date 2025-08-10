@@ -1,21 +1,169 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layout/base}">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>シンプル家計簿</title>
+    <!-- base.htmlで定義されるため、ここでは個別設定のみ -->
+    <title>ホーム</title>
 </head>
 <body>
-    <h1>シンプル家計簿</h1>
-    
-    <h2>メニュー</h2>
-    <ul>
-        <li><a href="/household/register">収支登録</a></li>
-        <li><a href="/household/list">収支一覧</a></li>
-        <li><a href="/household/monthly">月別集計</a></li>
-        <li><a href="/household/payment-analysis">支払い方法別分析</a></li>
-    </ul>
-    
-    <p>家計簿アプリへようこそ。上記のメニューから各機能をご利用ください。</p>
+    <th:block layout:fragment="content">
+        <!-- ウェルカムセクション -->
+        <div class="row">
+            <div class="col-12">
+                <div class="jumbotron bg-primary text-white rounded p-5 mb-4">
+                    <h1 class="display-4">
+                        <i class="fas fa-wallet me-3"></i>
+                        シンプル家計簿へようこそ
+                    </h1>
+                    <p class="lead">日々の収支を簡単に記録・管理できる家計簿アプリです。</p>
+                    <hr class="my-4 border-white">
+                    <p>収支の登録から分析まで、すべての機能を無料でご利用いただけます。</p>
+                    <a class="btn btn-light btn-lg" th:href="@{/household/creationForm}" role="button">
+                        <i class="fas fa-plus me-2"></i>
+                        今すぐ始める
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 機能メニュー -->
+        <div class="row">
+            <div class="col-12 mb-4">
+                <h2 class="h4 text-primary">
+                    <i class="fas fa-th-large me-2"></i>
+                    主な機能
+                </h2>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- 収支登録 -->
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-plus-circle fa-3x text-success"></i>
+                        </div>
+                        <h5 class="card-title">収支登録</h5>
+                        <p class="card-text">日々の収入と支出を簡単に記録できます。</p>
+                        <a th:href="@{/transaction/register}" class="btn btn-success">
+                            <i class="fas fa-plus me-1"></i>
+                            登録する
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 収支一覧 -->
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-list fa-3x text-primary"></i>
+                        </div>
+                        <h5 class="card-title">収支一覧</h5>
+                        <p class="card-text">登録した取引履歴を一覧で確認できます。</p>
+                        <a th:href="@{/transaction/list}" class="btn btn-primary">
+                            <i class="fas fa-list me-1"></i>
+                            確認する
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 月別集計 -->
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-chart-bar fa-3x text-info"></i>
+                        </div>
+                        <h5 class="card-title">月別集計</h5>
+                        <p class="card-text">月単位での収支状況を集計・分析できます。</p>
+                        <a th:href="@{/summary/monthly}" class="btn btn-info">
+                            <i class="fas fa-chart-bar me-1"></i>
+                            分析する
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 支払い分析 -->
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-credit-card fa-3x text-warning"></i>
+                        </div>
+                        <h5 class="card-title">支払い分析</h5>
+                        <p class="card-text">支払い方法別の利用状況を分析できます。</p>
+                        <a th:href="@{/household/payment-analysis}" class="btn btn-warning">
+                            <i class="fas fa-credit-card me-1"></i>
+                            分析する
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 統計情報 -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <h2 class="h4 text-primary mb-4">
+                    <i class="fas fa-chart-line me-2"></i>
+                    今月の概要
+                </h2>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="card-title">総収入</h6>
+                                <h4 class="mb-0" th:text="${#numbers.formatInteger(summary.totalIncome, 0, 'COMMA')} + '円'">¥3,000</h4>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-arrow-up fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card bg-danger text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="card-title">総支出</h6>
+                                <h4 class="mb-0" th:text="${#numbers.formatInteger(summary.totalExpense, 0, 'COMMA')} + '円'">¥2,000</h4>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-arrow-down fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="card-title">収支</h6>
+                                <h4 class="mb-0" th:text="${#numbers.formatInteger(summary.getBalance(), 0, 'COMMA')} + '円'">¥1,000</h4>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-balance-scale fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </th:block>
 </body>
 </html>

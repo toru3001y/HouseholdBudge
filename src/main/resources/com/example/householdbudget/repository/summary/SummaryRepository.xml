@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.householdbudget.repository.summary.SummaryRepository">
+    <!-- 最終版：月別収支サマリー -->
+    <select id="selectMonthlySummary" resultType="com.example.householdbudget.model.entity.summary.MonthlySummaryEntity">
+        WITH monthly_data AS (
+            SELECT
+                EXTRACT(YEAR FROM transaction_date) AS year,
+                EXTRACT(MONTH FROM transaction_date) AS month,
+                COALESCE(SUM(CASE WHEN transaction_type = '収入' THEN amount ELSE 0 END), 0) AS totalIncome,
+                COALESCE(SUM(CASE WHEN transaction_type = '支出' THEN amount ELSE 0 END), 0) AS totalExpense,
+                COALESCE(SUM(CASE WHEN transaction_type = '収入' THEN amount ELSE 0 END), 0) - 
+                COALESCE(SUM(CASE WHEN transaction_type = '支出' THEN amount ELSE 0 END), 0) AS balance
+            FROM household_transactions
+            GROUP BY EXTRACT(YEAR FROM transaction_date), EXTRACT(MONTH FROM transaction_date)
+        ),
+        monthly_with_prev AS (
+            SELECT 
+                year,
+                month,
+                totalIncome,
+                totalExpense,
+                balance,
+                LAG(balance) OVER (ORDER BY year ASC, month ASC) AS prev_balance,
+                LAG(totalIncome) OVER (ORDER BY year ASC, month ASC) AS prev_income,
+                LAG(totalExpense) OVER (ORDER BY year ASC, month ASC) AS prev_expense
+            FROM monthly_data
+        )
+        SELECT
+            year,
+            month,
+            totalIncome,
+            totalExpense,
+            balance,
+            CASE 
+                WHEN prev_balance IS NULL THEN 0.00  -- 初月は0%
+                WHEN prev_balance = 0 THEN 0.00      -- 前月が0の場合は0%
+                ELSE ROUND(((balance - prev_balance) * 100.0 / ABS(prev_balance)), 2)
+            END AS previousMonthComparisonRate,
+            -- 収入の前月比（新規追加）
+            CASE 
+                WHEN prev_income IS NULL THEN 0.00   -- 初月は0%
+                WHEN prev_income = 0 THEN 0.00       -- 前月が0の場合は0%
+                ELSE ROUND(((totalIncome - prev_income) * 100.0 / ABS(prev_income)), 2)
+            END AS incomeComparisonRate,
+            -- 支出の前月比（新規追加）
+            CASE 
+                WHEN prev_expense IS NULL THEN 0.00  -- 初月は0%
+                WHEN prev_expense = 0 THEN 0.00      -- 前月が0の場合は0%
+                ELSE ROUND(((totalExpense - prev_expense) * 100.0 / ABS(prev_expense)), 2)
+            END AS expenseComparisonRate,
+            CASE 
+                WHEN balance > 0 THEN '黒字' 
+                ELSE '赤字' 
+            END AS balanceStatus
+        FROM monthly_with_prev
+        ORDER BY year DESC, month DESC
+    </select>
+
+    <!-- 最新月の収入カテゴリ別集計 -->
+    <select id="selectLatestMonthIncomeCategories" resultType="com.example.householdbudget.model.entity.summary.IncomeCategoryEntity">
+        WITH month_total AS (
+            SELECT SUM(amount) as total_income
+            FROM household_transactions 
+            WHERE transaction_type = '収入' 
+            AND EXTRACT(YEAR FROM transaction_date) = #{year}
+            AND EXTRACT(MONTH FROM transaction_date) = #{month}
+        )
+        SELECT 
+            category,
+            SUM(amount) as amount,
+            ROUND(
+                CASE 
+                    WHEN (SELECT total_income FROM month_total) > 0 
+                    THEN SUM(amount) * 100.0 / (SELECT total_income FROM month_total)
+                    ELSE 0 
+                END, 2
+            ) as percentage
+        FROM household_transactions 
+        WHERE transaction_type = '収入' 
+        AND EXTRACT(YEAR FROM transaction_date) = #{year}
+        AND EXTRACT(MONTH FROM transaction_date) = #{month}
+        GROUP BY category
+        ORDER BY amount DESC
+    </select>
+
+
+    <!-- 最新月の支出カテゴリ別集計 -->
+    <select id="selectLatestMonthExpenseCategories" resultType="com.example.householdbudget.model.entity.summary.ExpenseCategoryEntity">
+        WITH month_total AS (
+            SELECT SUM(amount) as total_expense
+            FROM household_transactions
+            WHERE transaction_type = '支出'
+            AND EXTRACT(YEAR FROM transaction_date) = #{year}
+            AND EXTRACT(MONTH FROM transaction_date) = #{month}
+        )
+        SELECT
+            category,
+            SUM(amount) as amount,
+            ROUND(
+                CASE
+                    WHEN (SELECT total_expense FROM month_total) > 0
+                    THEN SUM(amount) * 100.0 / (SELECT total_expense FROM month_total)
+                    ELSE 0
+                END, 2
+            ) as percentage
+        FROM household_transactions
+        WHERE transaction_type = '支出'
+        AND EXTRACT(YEAR FROM transaction_date) = #{year}
+        AND EXTRACT(MONTH FROM transaction_date) = #{month}
+        GROUP BY category
+        ORDER BY amount DESC
+    </select>
+
+    <select id="selectPreviousYearSummary" resultType="com.example.householdbudget.model.entity.summary.YearlySummaryEntity">
+        SELECT 
+            EXTRACT(YEAR FROM transaction_date) AS year,
+            COALESCE(SUM(CASE WHEN transaction_type = '収入' THEN amount ELSE 0 END), 0) AS totalIncome,
+            COALESCE(SUM(CASE WHEN transaction_type = '支出' THEN amount ELSE 0 END), 0) AS totalExpense,
+            COALESCE(SUM(CASE WHEN transaction_type = '収入' THEN amount ELSE 0 END), 0) - 
+            COALESCE(SUM(CASE WHEN transaction_type = '支出' THEN amount ELSE 0 END), 0) AS balance,
+            CASE 
+                WHEN SUM(CASE WHEN transaction_type = '収入' THEN amount ELSE 0 END) > 0 
+                THEN ROUND(
+                    (COALESCE(SUM(CASE WHEN transaction_type = '収入' THEN amount ELSE 0 END), 0) - 
+                    COALESCE(SUM(CASE WHEN transaction_type = '支出' THEN amount ELSE 0 END), 0)) * 100.0 / 
+                    SUM(CASE WHEN transaction_type = '収入' THEN amount ELSE 0 END), 2
+                )
+                ELSE 0.00 
+            END AS averageSavingsRate
+        FROM household_transactions 
+        WHERE EXTRACT(YEAR FROM transaction_date) = (
+            SELECT MAX(EXTRACT(YEAR FROM transaction_date)) 
+            FROM household_transactions
+        )
+        GROUP BY EXTRACT(YEAR FROM transaction_date)
+        LIMIT 1
+    </select>
+</mapper>

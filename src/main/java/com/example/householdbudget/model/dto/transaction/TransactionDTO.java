@@ -1,10 +1,10 @@
-package com.example.householdbudget.model.dto;
+package com.example.householdbudget.model.dto.transaction;
 
 import java.time.format.DateTimeFormatter;
 
-import com.example.householdbudget.model.entity.TransactionEntity;
+import com.example.householdbudget.model.entity.transaction.TransactionEntity;
 
-public record TransactionDto(
+public record TransactionDTO(
     /** 
      * ID
      */
@@ -34,14 +34,14 @@ public record TransactionDto(
      */
     String description
 ) {
-    public static TransactionDto ToDTO(TransactionEntity entity) {
-        return new TransactionDto(
+    public static TransactionDTO ToDTO(TransactionEntity entity) {
+        return new TransactionDTO(
             entity.id(),
             entity.transactionDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
-            entity.transactionType(),
+            entity.transactionType().getName(),
             entity.amount(),
-            entity.category(),
-            entity.paymentMethod(),
+            entity.category().getName(),
+            entity.paymentMethod().getName(),
             entity.description()
         );
     }
