@@ -50,6 +50,7 @@ public class SummaryController {
         model.addAttribute("incomeCategories", incomeCategories);
         model.addAttribute("expenseCategories", expenseCategories);
         model.addAttribute("yearlySummary", yearlySummary);
+        model.addAttribute("chartData", monthlySummary);
 
         return "summary/monthly";
     }

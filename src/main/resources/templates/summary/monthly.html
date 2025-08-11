@@ -332,76 +332,246 @@
 
     
         <!-- Chart.js グラフ初期化 -->
-        <script>
-            // 月別収支推移グラフ
-            const trendCtx = document.getElementById('monthlyTrendChart').getContext('2d');
-            new Chart(trendCtx, {
-                type: 'line',
-                data: {
-                    labels: ['9月', '10月', '11月', '12月', '1月'],
-                    datasets: [{
-                        label: '収入',
-                        data: [298000, 325000, 310000, 320000, 350000],
-                        borderColor: '#28a745',
-                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                        tension: 0.1
-                    }, {
-                        label: '支出',
-                        data: [315000, 320000, 305000, 290000, 280000],
-                        borderColor: '#dc3545',
-                        backgroundColor: 'rgba(220, 53, 69, 0.1)',
-                        tension: 0.1
-                    }, {
-                        label: '収支',
-                        data: [-17000, 5000, 5000, 30000, 70000],
-                        borderColor: '#17a2b8',
-                        backgroundColor: 'rgba(23, 162, 184, 0.1)',
-                        tension: 0.1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: function(value) {
-                                    return '¥' + value.toLocaleString();
+        <script th:inline="javascript">
+            document.addEventListener('DOMContentLoaded', function() {
+                var attempts = 0;
+                var maxAttempts = 50; // 5秒間待機
+                
+                // Chart.jsが読み込まれるまで待機
+                function waitForChart() {
+                    attempts++;
+                    if (typeof Chart !== 'undefined') {
+                        console.log('Chart.js loaded successfully after ' + attempts + ' attempts');
+                        initializeCharts();
+                    } else if (attempts >= maxAttempts) {
+                        console.error('Chart.js failed to load after ' + attempts + ' attempts');
+                        showChartError();
+                    } else {
+                        if (attempts % 10 === 0) {
+                            console.log('Chart.js not loaded yet, waiting... (attempt ' + attempts + ')');
+                        }
+                        setTimeout(waitForChart, 100);
+                    }
+                }
+                
+                function showChartError() {
+                    // グラフエリアにエラーメッセージを表示
+                    var trendChart = document.getElementById('monthlyTrendChart');
+                    var pieChart = document.getElementById('categoryPieChart');
+                    
+                    if (trendChart) {
+                        trendChart.style.display = 'none';
+                        var errorMsg = document.createElement('div');
+                        errorMsg.className = 'alert alert-warning text-center';
+                        errorMsg.innerHTML = '<i class="fas fa-exclamation-triangle"></i> グラフライブラリの読み込みに失敗しました';
+                        trendChart.parentNode.appendChild(errorMsg);
+                    }
+                    
+                    if (pieChart) {
+                        pieChart.style.display = 'none';
+                        var errorMsg2 = document.createElement('div');
+                        errorMsg2.className = 'alert alert-warning text-center';
+                        errorMsg2.innerHTML = '<i class="fas fa-exclamation-triangle"></i> グラフライブラリの読み込みに失敗しました';
+                        pieChart.parentNode.appendChild(errorMsg2);
+                    }
+                }
+                
+                function initializeCharts() {
+                    try {
+                        console.log('Chart.js loaded successfully');
+                        
+                        // サーバーサイドデータをJavaScriptに渡す
+                        var chartDataRaw = /*[[${chartData}]]*/ [];
+                        var expenseCategoriesRaw = /*[[${expenseCategories}]]*/ [];
+                        
+                        console.log('Raw chart data:', chartDataRaw);
+                        console.log('Raw expense categories:', expenseCategoriesRaw);
+                        console.log('Type of chartDataRaw:', typeof chartDataRaw);
+                        console.log('Type of expenseCategoriesRaw:', typeof expenseCategoriesRaw);
+                        console.log('Is chartDataRaw array?', Array.isArray(chartDataRaw));
+                        console.log('Is expenseCategoriesRaw array?', Array.isArray(expenseCategoriesRaw));
+                        
+                        // 月別収支推移グラフの初期化
+                        initMonthlyTrendChart(chartDataRaw);
+                        
+                        // 支出内訳グラフの初期化
+                        initExpenseChart(expenseCategoriesRaw);
+                    } catch (error) {
+                        console.error('グラフ初期化エラー:', error);
+                    }
+                }
+                
+                waitForChart();
+            });
+            
+            function initMonthlyTrendChart(chartData) {
+                try {
+                    var trendCanvas = document.getElementById('monthlyTrendChart');
+                    if (!trendCanvas) {
+                        console.error('月別収支推移グラフのキャンバス要素が見つかりません');
+                        return;
+                    }
+                    
+                    var ctx = trendCanvas.getContext('2d');
+                    
+                    // データが空の場合
+                    if (!chartData || chartData.length === 0) {
+                        new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: ['データなし'],
+                                datasets: [{
+                                    label: '収入',
+                                    data: [0],
+                                    borderColor: '#28a745'
+                                }, {
+                                    label: '支出',
+                                    data: [0],
+                                    borderColor: '#dc3545'
+                                }, {
+                                    label: '収支',
+                                    data: [0],
+                                    borderColor: '#17a2b8'
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false
+                            }
+                        });
+                        return;
+                    }
+                    
+                    // データを時系列順にする
+                    var reversedData = chartData.slice().reverse();
+                    
+                    var labels = [];
+                    var incomeData = [];
+                    var expenseData = [];
+                    var balanceData = [];
+                    
+                    for (var i = 0; i < reversedData.length; i++) {
+                        var item = reversedData[i];
+                        labels.push(item.year + '年' + item.month + '月');
+                        incomeData.push(item.totalIncome || 0);
+                        expenseData.push(item.totalExpense || 0);
+                        balanceData.push(item.balance || 0);
+                    }
+                    
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: '収入',
+                                data: incomeData,
+                                borderColor: '#28a745',
+                                backgroundColor: 'rgba(40, 167, 69, 0.1)'
+                            }, {
+                                label: '支出',
+                                data: expenseData,
+                                borderColor: '#dc3545',
+                                backgroundColor: 'rgba(220, 53, 69, 0.1)'
+                            }, {
+                                label: '収支',
+                                data: balanceData,
+                                borderColor: '#17a2b8',
+                                backgroundColor: 'rgba(23, 162, 184, 0.1)'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true
                                 }
                             }
                         }
-                    }
+                    });
+                } catch (error) {
+                    console.error('月別収支推移グラフエラー:', error);
                 }
-            });
-
-            // カテゴリ別円グラフ
-            const pieCtx = document.getElementById('categoryPieChart').getContext('2d');
-            new Chart(pieCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['食費', '娯楽費', '光熱費', '交通費', 'その他'],
-                    datasets: [{
-                        data: [80000, 60000, 45000, 35000, 60000],
-                        backgroundColor: [
-                            '#ff6b6b',
-                            '#4ecdc4',
-                            '#45b7d1',
-                            '#96ceb4',
-                            '#ffeaa7'
-                        ]
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
+            }
+            
+            function initExpenseChart(expenseCategories) {
+                try {
+                    console.log('initExpenseChart called with:', expenseCategories);
+                    console.log('Expense categories length:', expenseCategories ? expenseCategories.length : 'null/undefined');
+                    
+                    var pieCanvas = document.getElementById('categoryPieChart');
+                    if (!pieCanvas) {
+                        console.error('支出内訳グラフのキャンバス要素が見つかりません');
+                        return;
+                    }
+                    
+                    var ctx = pieCanvas.getContext('2d');
+                    
+                    // データが空の場合
+                    if (!expenseCategories || expenseCategories.length === 0) {
+                        console.log('No expense data, showing empty chart');
+                        new Chart(ctx, {
+                            type: 'doughnut',
+                            data: {
+                                labels: ['データなし'],
+                                datasets: [{
+                                    data: [1],
+                                    backgroundColor: ['#e0e0e0']
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    title: {
+                                        display: true,
+                                        text: 'データがありません'
+                                    }
+                                }
+                            }
+                        });
+                        return;
+                    }
+                    
+                    var labels = [];
+                    var data = [];
+                    var colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7'];
+                    
+                    console.log('Processing expense categories...');
+                    for (var i = 0; i < expenseCategories.length; i++) {
+                        var item = expenseCategories[i];
+                        console.log('Processing item:', item);
+                        labels.push(item.category);
+                        data.push(item.amount);
+                    }
+                    
+                    console.log('Chart labels:', labels);
+                    console.log('Chart data:', data);
+                    
+                    new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                data: data,
+                                backgroundColor: colors
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom'
+                                }
+                            }
                         }
-                    }
+                    });
+                    console.log('Expense chart created successfully');
+                } catch (error) {
+                    console.error('支出内訳グラフエラー:', error);
                 }
-            });
+            }
         </script>
     </th:block>
 </body>
